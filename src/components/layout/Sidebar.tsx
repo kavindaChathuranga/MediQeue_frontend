@@ -188,9 +188,8 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           showIconsOnly && "px-2"
         )}>
           {filteredItems.map((item) => {
-            const isActive =
-              location.pathname === item.href ||
-              (item.href !== '/' && location.pathname.startsWith(item.href));
+            // Use exact match for active state to prevent multiple tabs being active
+            const isActive = location.pathname === item.href;
 
             return (
               <NavLink
