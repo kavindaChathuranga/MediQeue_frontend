@@ -30,6 +30,7 @@ import DoctorDashboard from "@/pages/doctor/DoctorDashboard";
 import DoctorQueue from "@/pages/doctor/DoctorQueue";
 import DoctorConsultation from "@/pages/doctor/DoctorConsultation";
 import DoctorAnalytics from "@/pages/doctor/DoctorAnalytics";
+import DoctorProfileSettings from "@/pages/doctor/DoctorProfileSettings";
 
 // Other Pages
 import InventoryPage from "@/pages/inventory/InventoryPage";
@@ -88,6 +89,14 @@ const App = () => (
                 element={
                   <ProtectedRoute allowedRoles={['doctor', 'admin']}>
                     <DoctorAnalytics />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/doctor/profile"
+                element={
+                  <ProtectedRoute allowedRoles={['doctor', 'admin']}>
+                    <DoctorProfileSettings />
                   </ProtectedRoute>
                 }
               />

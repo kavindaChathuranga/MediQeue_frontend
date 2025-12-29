@@ -13,6 +13,7 @@ import {
   Settings,
   Monitor,
   UserPlus,
+  User,
   ClipboardList,
   Package,
   BarChart3,
@@ -24,6 +25,7 @@ import {
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  disabled?: boolean;
 }
 
 interface NavItem {
@@ -39,6 +41,7 @@ const navItems: NavItem[] = [
   { label: 'Queue Viewer', icon: ListOrdered, href: '/doctor/queue', roles: ['doctor', 'admin'] },
   { label: 'New Consultation', icon: ClipboardList, href: '/doctor/consultation', roles: ['doctor', 'admin'] },
   { label: 'Analytics', icon: BarChart3, href: '/doctor/analytics', roles: ['doctor', 'admin'] },
+  { label: 'Profile Settings', icon: User, href: '/doctor/profile', roles: ['doctor', 'admin'] },
   
   // Receptionist Items
   { label: 'Dashboard', icon: LayoutDashboard, href: '/reception', roles: ['receptionist'] },
@@ -55,7 +58,7 @@ const navItems: NavItem[] = [
   { label: 'Settings', icon: Settings, href: '/admin/settings', roles: ['admin'] },
 ];
 
-export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
+export function Sidebar({ isOpen = true, onClose, disabled = false }: SidebarProps) {
   const location = useLocation();
   const { user } = useAuth();
   const [sidebarWidth, setSidebarWidth] = useState(256); // Default 256px (w-64)
@@ -166,9 +169,13 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
       {/* Sidebar */}
       <aside
         className={cn(
-          'fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] border-r bg-card md:translate-x-0',
-          isOpen ? 'translate-x-0' : '-translate-x-full'
+          'fixed left-0 top-16 z-40 h-[calc(100vh-4rem)] border-r md:translate-x-0 transition-opacity',
+          isOpen ? 'translate-x-0' : '-translate-x-full',
+          disabled
+            ? 'bg-blue-50 border-blue-200 opacity-70 backdrop-blur-sm'
+            : 'bg-card'
         )}
+        aria-disabled={disabled}
         style={{ width: `${sidebarWidth}px` }}
       >
         {/* Resize Handle */}
@@ -177,16 +184,20 @@ export function Sidebar({ isOpen = true, onClose }: SidebarProps) {
           onDoubleClick={handleDoubleClick}
           className={cn(
             'absolute right-0 top-0 bottom-0 w-1 cursor-ew-resize hover:bg-primary/50 transition-colors group hidden md:block',
-            isResizing && 'bg-primary'
+            isResizing && 'bg-primary',
+            disabled && 'pointer-events-auto'
           )}
         >
           <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-12 bg-primary/30 group-hover:bg-primary/70 rounded-full transition-colors" />
         </div>
 
-        <nav className={cn(
-          "flex flex-col gap-1 p-4",
-          showIconsOnly && "px-2"
-        )}>
+        <nav
+          className={cn(
+            'flex flex-col gap-1 p-4',
+            showIconsOnly && 'px-2',
+            disabled && 'pointer-events-none select-none'
+          )}
+        >
           {filteredItems.map((item) => {
             // Use exact match for active state to prevent multiple tabs being active
             const isActive = location.pathname === item.href;

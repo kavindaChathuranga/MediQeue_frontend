@@ -1,4 +1,4 @@
-import { Bell, Menu, Search, User, LogOut } from 'lucide-react';
+import { Bell, Menu, Search, LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -15,9 +15,10 @@ import { useNavigate } from 'react-router-dom';
 
 interface NavbarProps {
   onMenuClick?: () => void;
+  onOpenPanel?: (panel: 'profile' | 'identity') => void;
 }
 
-export function Navbar({ onMenuClick }: NavbarProps) {
+export function Navbar({ onMenuClick, onOpenPanel }: NavbarProps) {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -37,6 +38,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
     };
     return labels[role] || role;
   };
+
+  const profileInitial = (user?.name || 'User').charAt(0).toUpperCase();
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
@@ -85,8 +88,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
                 variant="ghost"
                 className="flex items-center gap-2 px-2 transition-all duration-200 rounded-lg hover:shadow-sm hover:bg-transparent focus-visible:ring-2 focus-visible:ring-blue-500/30"
               >
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-blue-400 to-blue-600 shadow-md transition-transform duration-200 hover:scale-110">
-                  <User className="h-4 w-4 text-white" />
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-blue-400 to-blue-600 shadow-md transition-transform duration-200 hover:scale-110 text-white font-semibold">
+                  {profileInitial}
                 </div>
                 <div className="hidden text-left md:block">
                   <p className="text-sm font-medium transition-colors text-foreground">{user?.name || 'User'}</p>
@@ -97,8 +100,8 @@ export function Navbar({ onMenuClick }: NavbarProps) {
             <DropdownMenuContent align="end" className="w-56 bg-card">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Profile Settings</DropdownMenuItem>
-              <DropdownMenuItem>Preferences</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onOpenPanel?.('profile')}>Profile Settings</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onOpenPanel?.('identity')}>Clinic Identity</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout} className="text-destructive">
                 <LogOut className="h-4 w-4 mr-2" />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import {
   AlertCircle,
   CheckCircle,
@@ -54,6 +55,8 @@ const currentPatient = {
   chronicConditions: ['Hypertension', 'Type 2 Diabetes'],
 };
 
+const PROFILE_STORAGE_KEY = 'doctorProfileSettings';
+
 interface Medication {
   id: string;
   drugName: string;
@@ -78,6 +81,28 @@ export default function DoctorConsultation({ onComplete }: DoctorConsultationPro
   const [diagnosis, setDiagnosis] = useState('');
   const [notes, setNotes] = useState('');
   const [medications, setMedications] = useState<Medication[]>([]);
+  const [medCertificate, setMedCertificate] = useState(false);
+  const [certReason, setCertReason] = useState('');
+  const [certStartDate, setCertStartDate] = useState('');
+  const [certEndDate, setCertEndDate] = useState('');
+  const [showVerify, setShowVerify] = useState(false);
+  const [doctorPassword, setDoctorPassword] = useState('');
+  const [signatureVerified, setSignatureVerified] = useState(false);
+  const [storedSystemPassword, setStoredSystemPassword] = useState('');
+  const [storedSignatureImage, setStoredSignatureImage] = useState('');
+
+  useEffect(() => {
+    const saved = localStorage.getItem(PROFILE_STORAGE_KEY);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved) as { systemPassword?: string; signatureImage?: string };
+        setStoredSystemPassword(parsed.systemPassword || '');
+        setStoredSignatureImage(parsed.signatureImage || '');
+      } catch (err) {
+        console.error('Failed to read stored system password', err);
+      }
+    }
+  }, []);
 
   // Check if drug is in stock
   const checkStock = (drugName: string) => {
@@ -132,8 +157,24 @@ export default function DoctorConsultation({ onComplete }: DoctorConsultationPro
     );
   };
 
+  const buildConsultationPayload = (verifiedSignature: boolean) => ({
+    symptoms,
+    diagnosis,
+    notes,
+    medications,
+    requiresCertificate: medCertificate,
+    certificate: medCertificate
+      ? {
+          reason: certReason,
+          startDate: certStartDate,
+          endDate: certEndDate,
+          verifiedSignature,
+        }
+      : null,
+  });
+
   // Handle submission
-  const handleSendToReception = () => {
+  const handleSendToReception = (skipVerification = false) => {
     if (medications.length === 0) {
       toast({
         title: 'No Medications',
@@ -157,10 +198,21 @@ export default function DoctorConsultation({ onComplete }: DoctorConsultationPro
       return;
     }
 
-    // Success - send to reception
+    if (medCertificate && !signatureVerified && !skipVerification) {
+      setShowVerify(true);
+      return;
+    }
+
+    const payload = buildConsultationPayload(signatureVerified || skipVerification);
+
+    // TODO: replace with API call
+    // await api.saveConsultation(payload);
+
     toast({
       title: 'Sent to Reception',
-      description: 'Prescription has been sent to reception for billing and dispensing.',
+      description: medCertificate
+        ? 'Prescription & medical certificate sent to reception.'
+        : 'Prescription has been sent to reception for billing and dispensing.',
     });
 
     onComplete?.();
@@ -170,6 +222,12 @@ export default function DoctorConsultation({ onComplete }: DoctorConsultationPro
     setDiagnosis('');
     setNotes('');
     setMedications([]);
+    setMedCertificate(false);
+    setCertReason('');
+    setCertStartDate('');
+    setCertEndDate('');
+    setSignatureVerified(false);
+    setDoctorPassword('');
   };
 
   return (
@@ -316,6 +374,38 @@ export default function DoctorConsultation({ onComplete }: DoctorConsultationPro
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                 />
+              </div>
+
+              <div className="space-y-3 rounded-lg border border-dashed border-muted-foreground/30 p-4">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="med-cert"
+                    checked={medCertificate}
+                    onCheckedChange={(v) => setMedCertificate(!!v)}
+                  />
+                  <Label htmlFor="med-cert" className="font-semibold">Request Medical Certificate</Label>
+                </div>
+
+                {medCertificate && (
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="md:col-span-2 space-y-2">
+                      <Label>Diagnosis / Reason for Leave</Label>
+                      <Textarea
+                        value={certReason}
+                        onChange={(e) => setCertReason(e.target.value)}
+                        placeholder="e.g., Acute viral fever, requires rest"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Start Date</Label>
+                      <Input type="date" value={certStartDate} onChange={(e) => setCertStartDate(e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>End Date</Label>
+                      <Input type="date" value={certEndDate} onChange={(e) => setCertEndDate(e.target.value)} />
+                    </div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -565,7 +655,7 @@ export default function DoctorConsultation({ onComplete }: DoctorConsultationPro
           {/* Submit Action */}
           <div className="flex justify-end">
             <Button
-              onClick={handleSendToReception}
+              onClick={() => handleSendToReception()}
               size="lg"
               className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-8"
             >
@@ -575,6 +665,52 @@ export default function DoctorConsultation({ onComplete }: DoctorConsultationPro
           </div>
         </div>
       </div>
+
+      <Dialog open={showVerify} onOpenChange={setShowVerify}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Verify Doctor Identity</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              Enter your system password to sign the medical certificate.
+            </p>
+            <Input
+              type="password"
+              placeholder="System password (set in Profile Settings)"
+              value={doctorPassword}
+              onChange={(e) => setDoctorPassword(e.target.value)}
+            />
+          </div>
+          <DialogFooter className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowVerify(false)}>Cancel</Button>
+            <Button
+              onClick={() => {
+                if (!doctorPassword) {
+                  toast({ title: 'Password required', variant: 'destructive' });
+                  return;
+                }
+                if (!storedSystemPassword) {
+                  toast({ title: 'Set a system password in Profile Settings', variant: 'destructive' });
+                  return;
+                }
+                if (doctorPassword !== storedSystemPassword) {
+                  toast({ title: 'Incorrect password', description: 'The system password does not match.', variant: 'destructive' });
+                  setDoctorPassword('');
+                  return;
+                }
+
+                setSignatureVerified(true);
+                setShowVerify(false);
+                setDoctorPassword('');
+                handleSendToReception(true);
+              }}
+            >
+              Verify & Continue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

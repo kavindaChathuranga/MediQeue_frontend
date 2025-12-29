@@ -215,7 +215,7 @@ export default function DoctorQueue() {
 
                     {/* Inline Consultation Form */}
                     {activeConsultationTokenId === token.id && (
-                      <div className="mt-6 rounded-xl border-2 border-blue-200 bg-blue-50/30 p-6 shadow-md dark:border-blue-900/40 dark:bg-blue-900/10">
+                      <div className="mt-6 p-6">
                         <div className="mb-4 flex items-center justify-between">
                           <div>
                             <h3 className="text-lg font-semibold text-foreground">Active Consultation</h3>
