@@ -13,7 +13,6 @@ import {
   Settings,
   Monitor,
   UserPlus,
-  User,
   ClipboardList,
   Package,
   BarChart3,
@@ -41,7 +40,6 @@ const navItems: NavItem[] = [
   { label: 'Queue Viewer', icon: ListOrdered, href: '/doctor/queue', roles: ['doctor', 'admin'] },
   { label: 'New Consultation', icon: ClipboardList, href: '/doctor/consultation', roles: ['doctor', 'admin'] },
   { label: 'Analytics', icon: BarChart3, href: '/doctor/analytics', roles: ['doctor', 'admin'] },
-  { label: 'Profile Settings', icon: User, href: '/doctor/profile', roles: ['doctor', 'admin'] },
   
   // Receptionist Items
   { label: 'Dashboard', icon: LayoutDashboard, href: '/reception', roles: ['receptionist'] },
