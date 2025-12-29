@@ -288,7 +288,12 @@ export default function DoctorDashboard() {
 
               {/* Estimated Completion */}
               <div className="flex items-center gap-3">
-                <Activity className="h-5 w-5 text-muted-foreground" />
+                <iframe
+                  title="Estimated completion animation"
+                  src="https://lottie.host/embed/e9f8a780-729d-4fe8-b193-0d7a8274944a/8iSPVWbLl6.lottie"
+                  className="h-20 w-20 shrink-0 border-0 bg-transparent"
+                  loading="lazy"
+                />
                 <span className="text-sm font-medium">Estimated Completion:</span>
                 <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-200 dark:border-blue-700">
                   {estimatedHours}h {estimatedMinutes}m

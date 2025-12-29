@@ -218,7 +218,7 @@ export default function ReceptionBilling() {
                       'flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
                       paymentMethod === 'cash'
                         ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
+                        : 'border-border hover:border-blue-400/50 dark:hover:border-blue-600/50 hover:bg-blue-50/50 dark:hover:bg-blue-950/20'
                     )}
                   >
                     <Banknote className="h-5 w-5" />
@@ -230,7 +230,7 @@ export default function ReceptionBilling() {
                       'flex items-center justify-center gap-2 rounded-lg border-2 p-3 transition-all',
                       paymentMethod === 'card'
                         ? 'border-primary bg-primary/5'
-                        : 'border-border hover:border-primary/50'
+                        : 'border-border hover:border-blue-400/50 dark:hover:border-blue-600/50 hover:bg-blue-50/50 dark:hover:bg-blue-950/20'
                     )}
                   >
                     <CreditCard className="h-5 w-5" />

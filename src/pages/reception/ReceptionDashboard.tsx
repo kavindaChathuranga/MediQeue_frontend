@@ -137,7 +137,7 @@ export default function ReceptionDashboard() {
       {/* Quick Actions */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Link to="/reception/register">
-          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50">
+          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-blue-400/50 dark:hover:border-blue-600/50">
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-medical-blue/20">
                 <UserPlus className="h-6 w-6 text-medical-blue" />
@@ -150,7 +150,7 @@ export default function ReceptionDashboard() {
           </Card>
         </Link>
         <Link to="/reception/dispense">
-          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50">
+          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-blue-400/50 dark:hover:border-blue-600/50">
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-medical-green/20">
                 <Pill className="h-6 w-6 text-medical-green" />
@@ -163,7 +163,7 @@ export default function ReceptionDashboard() {
           </Card>
         </Link>
         <Link to="/reception/billing">
-          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50">
+          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-blue-400/50 dark:hover:border-blue-600/50">
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-medical-orange/20">
                 <Receipt className="h-6 w-6 text-medical-orange" />
@@ -176,7 +176,7 @@ export default function ReceptionDashboard() {
           </Card>
         </Link>
         <Link to="/inventory">
-          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-primary/50">
+          <Card className="cursor-pointer transition-all hover:shadow-md hover:border-blue-400/50 dark:hover:border-blue-600/50">
             <CardContent className="flex items-center gap-4 p-4">
               <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-medical-violet/20">
                 <Package className="h-6 w-6 text-medical-violet" />

@@ -2,10 +2,10 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { QueueGrid } from '@/components/common/QueueGrid';
 import { mockQueueTokens } from '@/data/mockData';
+import DoctorConsultation from './DoctorConsultation';
 import { QueueToken } from '@/types';
-import { Clock, Users, AlertCircle, Play, User, Stethoscope, UserCircle2, Activity } from 'lucide-react';
+import { Clock, Users, AlertCircle, Play, User, Stethoscope, PhoneCall, AlertTriangle, X } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
 
@@ -13,6 +13,21 @@ export default function DoctorQueue() {
   const [tokens, setTokens] = useState<QueueToken[]>(
     mockQueueTokens.filter((t) => t.doctorId === 'D001')
   );
+  const [activeConsultationTokenId, setActiveConsultationTokenId] = useState<string | null>(null);
+  const activeConsultationToken = tokens.find((t) => t.id === activeConsultationTokenId) || null;
+
+  const formatRelativeTime = (date?: Date) => {
+    if (!date) return '—';
+    const diffMs = Date.now() - date.getTime();
+    if (diffMs < 0) return '—';
+    const diffMin = Math.floor(diffMs / 60000);
+    if (diffMin < 1) return 'Just now';
+    if (diffMin < 60) return `${diffMin} min ago`;
+    const diffHours = Math.floor(diffMin / 60);
+    if (diffHours < 24) return `${diffHours} hr${diffHours === 1 ? '' : 's'} ago`;
+    const diffDays = Math.floor(diffHours / 24);
+    return `${diffDays} day${diffDays === 1 ? '' : 's'} ago`;
+  };
 
   const waitingTokens = tokens.filter(
     (t) => t.status === 'waiting' || t.status === 'urgent'
@@ -22,7 +37,9 @@ export default function DoctorQueue() {
   const handleCallPatient = (token: QueueToken) => {
     setTokens((prev) =>
       prev.map((t) =>
-        t.id === token.id ? { ...t, status: 'in-room', calledAt: new Date() } : t
+        t.id === token.id
+          ? { ...t, status: 'in-room', calledAt: new Date(), consultationCompleted: false }
+          : t
       )
     );
     toast({
@@ -43,6 +60,17 @@ export default function DoctorQueue() {
     );
   };
 
+  const handleStartConsultation = (token: QueueToken) => {
+    setActiveConsultationTokenId(token.id);
+  };
+
+  const handleConsultationComplete = (tokenId: string) => {
+    setTokens((prev) =>
+      prev.map((t) => (t.id === tokenId ? { ...t, consultationCompleted: true } : t))
+    );
+    setActiveConsultationTokenId(null);
+  };
+
   const handleComplete = (token: QueueToken) => {
     setTokens((prev) =>
       prev.map((t) => (t.id === token.id ? { ...t, status: 'completed' } : t))
@@ -51,229 +79,339 @@ export default function DoctorQueue() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Live Patient Queue</h1>
-          <p className="text-muted-foreground">Real-time patient queue - Updated live</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Badge variant="outline" className="h-9 px-3">
-            <span className="relative flex h-2 w-2 mr-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-            </span>
-            Live
-          </Badge>
-          <Button
-            onClick={() => waitingTokens[0] && handleCallPatient(waitingTokens[0])}
-            disabled={waitingTokens.length === 0 || inRoomTokens.length > 0}
-            size="lg"
-            className="bg-blue-600 hover:bg-blue-700"
-          >
-            <Play className="h-4 w-4 mr-2" />
-            Call Next Patient
-          </Button>
+          <h1 className="text-3xl font-bold">Patient Queue</h1>
+          <p className="text-muted-foreground">View and manage your patient queue</p>
         </div>
       </div>
 
-      {/* Now Serving Section - Prominent and Clean */}
-      <Card className="border-0 shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-green-50/80 to-blue-50/80 dark:from-green-950/20 dark:to-blue-950/20 border-b">
-          <CardHeader className="pb-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 dark:bg-green-900/30">
-                <Stethoscope className="h-5 w-5 text-green-600 dark:text-green-400" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-semibold text-foreground">Doctor Consultation</CardTitle>
-                <CardDescription className="text-sm">Currently in consultation</CardDescription>
-              </div>
+      {/* Stats */}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-status-waiting/20">
+              <Clock className="h-6 w-6 text-status-waiting" />
             </div>
-          </CardHeader>
-        </div>
-        
-        <CardContent className="p-6">
-          {inRoomTokens.length > 0 ? (
-            <div className="space-y-4">
-              {inRoomTokens.map((token) => (
-                <div
-                  key={token.id}
-                  className="relative bg-gradient-to-br from-green-50 to-blue-50 dark:from-green-950/10 dark:to-blue-950/10 rounded-2xl p-6 border-2 border-green-200 dark:border-green-800"
-                >
-                  {/* Subtle pulse animation indicator */}
-                  <div className="absolute top-4 right-4">
-                    <span className="relative flex h-3 w-3">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-6">
-                    {/* Patient Icon */}
-                    <div className="flex-shrink-0">
-                      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white dark:bg-gray-800 border-2 border-green-300 dark:border-green-700 shadow-sm">
-                        <UserCircle2 className="h-12 w-12 text-green-600 dark:text-green-400" />
-                      </div>
-                    </div>
-
-                    {/* Patient Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-baseline gap-3 mb-1">
-                        <h3 className="text-3xl font-bold text-green-700 dark:text-green-400 font-mono tracking-tight">
-                          {token.tokenNumber}
-                        </h3>
-                        <Badge className="bg-green-600 dark:bg-green-700 text-white text-xs px-2 py-0.5">
-                          Active
-                        </Badge>
-                      </div>
-                      <p className="text-lg font-medium text-foreground truncate">{token.patientName}</p>
-                      <p className="text-sm text-muted-foreground">Currently in consultation</p>
-                    </div>
-
-                    {/* Action Button */}
-                    <div>
-                      <Button
-                        onClick={() => handleComplete(token)}
-                        size="lg"
-                        variant="outline"
-                        className="bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 border-2"
-                      >
-                        Complete Consultation
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              ))}
+            <div>
+              <p className="text-2xl font-bold">{waitingTokens.length}</p>
+              <p className="text-sm text-muted-foreground">Waiting</p>
             </div>
-          ) : (
-            <div className="text-center py-8">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 mx-auto mb-3">
-                <Activity className="h-8 w-8 text-gray-400" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">No patient in consultation</p>
-              <p className="text-xs text-muted-foreground mt-1">Call the next patient to begin</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-status-inroom/20">
+              <Users className="h-6 w-6 text-status-inroom" />
             </div>
-          )}
-        </CardContent>
-      </Card>
+            <div>
+              <p className="text-2xl font-bold">{inRoomTokens.length}</p>
+              <p className="text-sm text-muted-foreground">In Room</p>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="flex items-center gap-4 p-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-status-urgent/20">
+              <AlertCircle className="h-6 w-6 text-status-urgent" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold">
+                {tokens.filter((t) => t.status === 'urgent').length}
+              </p>
+              <p className="text-sm text-muted-foreground">Urgent</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Waiting Queue Section - Clean Grid Layout */}
-      <Card className="border-0 shadow-sm">
-        <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
+      {/* Queue */}
+      <Card>
+        <CardHeader>
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900/30">
-                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <CardTitle className="text-lg font-semibold">Waiting Queue</CardTitle>
-                <CardDescription className="text-sm">
-                  {waitingTokens.length} patient{waitingTokens.length !== 1 ? 's' : ''} waiting
-                </CardDescription>
-              </div>
+            <div>
+              <CardTitle className="text-xl flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Current Queue Status
+              </CardTitle>
+              <CardDescription>Real-time patient queue - Updated live</CardDescription>
             </div>
-            {tokens.filter((t) => t.status === 'urgent').length > 0 && (
-              <Badge variant="destructive" className="gap-1">
-                <AlertCircle className="h-3 w-3" />
-                {tokens.filter((t) => t.status === 'urgent').length} Urgent
-              </Badge>
-            )}
+            <Badge variant="outline" className="animate-pulse">
+              <span className="flex h-2 w-2 rounded-full bg-green-500 mr-2"></span>
+              Live
+            </Badge>
           </div>
         </CardHeader>
+        <CardContent>
+          {waitingTokens.length > 0 || inRoomTokens.length > 0 ? (
+            <>
+              {/* Now Serving */}
+              {inRoomTokens.length > 0 ? (
+                inRoomTokens.slice(0, 1).map((token) => (
+                  <section key={token.id} className="mb-8">
+                    <div className="min-h-[168px] rounded-2xl border border-emerald-200/70 bg-emerald-50/60 p-6 shadow-sm dark:border-emerald-900/40 dark:bg-emerald-900/15">
+                      <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex items-center gap-5">
+                          <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl">
+                            <iframe src="https://lottie.host/embed/e9f8a780-729d-4fe8-b193-0d7a8274944a/8iSPVWbLl6.lottie"></iframe>
+                          </div>
 
-        <CardContent className="p-6">
-          {waitingTokens.length > 0 ? (
-            <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {waitingTokens.map((token, index) => (
-                <div
-                  key={token.id}
-                  className={cn(
-                    'group relative bg-white dark:bg-gray-900 rounded-xl p-5 transition-all duration-200',
-                    'border-2 hover:shadow-md',
-                    token.status === 'urgent'
-                      ? 'border-red-200 dark:border-red-900 hover:border-red-300 dark:hover:border-red-800'
-                      : 'border-gray-200 dark:border-gray-800 hover:border-blue-200 dark:hover:border-blue-800'
-                  )}
-                >
-                  {/* Urgent indicator - subtle and small */}
-                  {token.status === 'urgent' && (
-                    <div className="absolute -top-2 -right-2 z-10">
-                      <Badge className="bg-red-600 text-white text-xs px-2 py-0.5 shadow-sm">
-                        URGENT
-                      </Badge>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-foreground">Now Serving</p>
+                              <Badge
+                                variant="secondary"
+                                className="border border-emerald-200 bg-emerald-100/70 text-emerald-800 dark:border-emerald-900/50 dark:bg-emerald-900/30 dark:text-emerald-200"
+                              >
+                                <span className="relative mr-2 inline-flex h-2 w-2">
+                                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500/50" />
+                                  <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-600" />
+                                </span>
+                                In consultation
+                              </Badge>
+                            </div>
+
+                            <div className="mt-2 flex flex-wrap items-end gap-x-4 gap-y-1">
+                              <p className="text-4xl font-bold tracking-tight text-foreground">{token.tokenNumber}</p>
+                              <p className="min-w-0 truncate text-base font-medium text-muted-foreground">
+                                {token.patientName}
+                              </p>
+                            </div>
+
+                            <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground">
+                              <div className="flex items-center gap-2">
+                                <Clock className="h-4 w-4 text-emerald-700/80 dark:text-emerald-300/80" />
+                                <span>
+                                  Called {token.calledAt ? token.calledAt.toLocaleTimeString() : '—'}
+                                  <span className="ml-2">({formatRelativeTime(token.calledAt)})</span>
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-emerald-700/80 dark:text-emerald-300/80" />
+                                <span>Position #{token.position}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-end">
+                          {token.consultationCompleted ? (
+                            <Button onClick={() => handleComplete(token)} size="sm">
+                              Complete Visit
+                            </Button>
+                          ) : activeConsultationTokenId === token.id ? (
+                            <Button onClick={() => setActiveConsultationTokenId(null)} variant="outline" size="sm">
+                              <X className="h-4 w-4 mr-2" />
+                              Cancel Consultation
+                            </Button>
+                          ) : (
+                            <Button onClick={() => handleStartConsultation(token)} size="sm">
+                              Start Consultation
+                            </Button>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  )}
 
-                  {/* Card Content */}
-                  <div className="flex flex-col items-center text-center space-y-3">
-                    {/* Patient Icon */}
-                    <div className={cn(
-                      'flex h-14 w-14 items-center justify-center rounded-full transition-colors',
-                      token.status === 'urgent'
-                        ? 'bg-red-50 dark:bg-red-950/30'
-                        : 'bg-gray-100 dark:bg-gray-800'
-                    )}>
-                      <UserCircle2 className={cn(
-                        'h-8 w-8',
-                        token.status === 'urgent'
-                          ? 'text-red-600 dark:text-red-400'
-                          : 'text-gray-600 dark:text-gray-400'
-                      )} />
-                    </div>
+                    {/* Inline Consultation Form */}
+                    {activeConsultationTokenId === token.id && (
+                      <div className="mt-6 rounded-xl border-2 border-blue-200 bg-blue-50/30 p-6 shadow-md dark:border-blue-900/40 dark:bg-blue-900/10">
+                        <div className="mb-4 flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-semibold text-foreground">Active Consultation</h3>
+                            <p className="text-sm text-muted-foreground">
+                              {token.patientName} • Token {token.tokenNumber}
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setActiveConsultationTokenId(null)}
+                            className="text-muted-foreground hover:text-foreground"
+                          >
+                            <X className="h-4 w-4 mr-2" />
+                            Close
+                          </Button>
+                        </div>
+                        <DoctorConsultation
+                          onComplete={() => handleConsultationComplete(token.id)}
+                        />
+                      </div>
+                    )}
+                  </section>
+                ))
+              ) : (
+                <section className="mb-8">
+                  <div className="min-h-[168px] rounded-2xl border border-dashed border-border bg-muted/10 p-6 shadow-sm">
+                    <div className="flex h-full flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex items-center gap-5">
+                        <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          <Stethoscope className="h-9 w-9" />
+                        </div>
 
-                    {/* Token Number */}
-                    <div className="space-y-1">
-                      <p className="text-2xl font-bold font-mono text-foreground tracking-tight">
-                        {token.tokenNumber}
-                      </p>
-                      <p className="text-sm font-medium text-foreground line-clamp-1">
-                        {token.patientName}
-                      </p>
-                    </div>
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-semibold text-foreground">Now Serving</p>
+                            <Badge variant="secondary" className="border border-border bg-muted text-muted-foreground">
+                              Waiting
+                            </Badge>
+                          </div>
 
-                    {/* Wait Time */}
-                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                      <Clock className="h-3 w-3" />
-                      <span>~{token.estimatedWaitTime} min wait</span>
-                    </div>
+                          <div className="mt-2 space-y-2">
+                            <div className="h-9 w-40 rounded-md bg-muted animate-pulse" />
+                            <div className="h-4 w-64 max-w-full rounded-md bg-muted/70 animate-pulse" />
+                          </div>
 
-                    {/* Action Buttons */}
-                    <div className="flex gap-2 w-full pt-2">
+                          <p className="mt-3 text-sm text-muted-foreground">
+                            Room is ready. Call the next patient to start consultation.
+                          </p>
+                        </div>
+                      </div>
+
                       <Button
-                        onClick={() => handleCallPatient(token)}
-                        size="sm"
-                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
-                        disabled={inRoomTokens.length > 0}
+                        onClick={() => waitingTokens[0] && handleCallPatient(waitingTokens[0])}
+                        disabled={waitingTokens.length === 0}
+                        className="sm:min-w-[240px]"
                       >
-                        Call
+                        <Play className="mr-2 h-4 w-4" />
+                        {waitingTokens.length > 0 ? (
+                          <span className="flex flex-col items-start">
+                            <span className="text-xs opacity-80">Call Next Patient</span>
+                            <span className="font-semibold">{waitingTokens[0].tokenNumber} • {waitingTokens[0].patientName}</span>
+                          </span>
+                        ) : (
+                          'Call Next Patient'
+                        )}
                       </Button>
-                      {token.status !== 'urgent' && (
-                        <Button
-                          onClick={() => handleMarkUrgent(token)}
-                          size="sm"
-                          variant="outline"
-                          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700 dark:border-red-900 dark:text-red-400"
-                        >
-                          Urgent
-                        </Button>
-                      )}
                     </div>
                   </div>
+                </section>
+              )}
+
+              {/* Waiting Queue - Hidden during active consultation */}
+              {!activeConsultationTokenId && ((inRoomTokens.length > 0 ? [...waitingTokens] : waitingTokens.slice(1))).length > 0 && (
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <Users className="h-5 w-5 text-primary" />
+                    <p className="font-semibold text-lg">Waiting Queue</p>
+                    <Badge variant="secondary">
+                      {(inRoomTokens.length > 0 ? waitingTokens.length : waitingTokens.length - 1)} waiting
+                    </Badge>
+                  </div>
+
+                  <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                    {(inRoomTokens.length > 0 ? waitingTokens : waitingTokens.slice(1)).map((token, index) => {
+                      const queuePosition = inRoomTokens.length > 0 ? index + 2 : index + 2;
+                      const isUrgent = token.status === 'urgent';
+
+                      return (
+                        <article
+                          key={token.id}
+                          className={cn(
+                            'group relative flex items-center gap-4 rounded-xl border bg-card p-4 shadow-sm transition-all duration-200 hover:shadow-md',
+                            isUrgent
+                              ? 'border-amber-400/70 bg-amber-50/30 dark:border-amber-500/50 dark:bg-amber-900/10'
+                              : 'border-border/80'
+                          )}
+                        >
+                          {/* Left strip (subtle status cue) */}
+                          <div
+                            className={cn(
+                              'h-12 w-1.5 shrink-0 rounded-full',
+                              isUrgent ? 'bg-amber-500/80' : 'bg-muted'
+                            )}
+                            aria-hidden="true"
+                          />
+
+                          {/* Token + position */}
+                          <div className="flex min-w-0 flex-col items-center">
+                            <div
+                              className={cn(
+                                'flex h-8 w-8 items-center justify-center rounded-full border text-xs font-semibold',
+                                isUrgent
+                                  ? 'border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700/60 dark:bg-amber-900/30 dark:text-amber-100'
+                                  : 'border-border bg-muted text-foreground'
+                              )}
+                              title="Queue position"
+                            >
+                              {queuePosition}
+                            </div>
+                            <p className="mt-2 text-lg font-semibold tracking-wide text-foreground">
+                              {token.tokenNumber}
+                            </p>
+                          </div>
+
+                          {/* Patient + wait */}
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <p className="min-w-0 truncate text-sm font-medium text-foreground">
+                                {token.patientName}
+                              </p>
+                              {isUrgent && (
+                                <Badge className="ml-auto bg-amber-500 text-white shadow-sm">Urgent</Badge>
+                              )}
+                            </div>
+                            <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                              <Clock className="h-3.5 w-3.5" />
+                              <span>Est. {token.estimatedWaitTime} min</span>
+                            </div>
+                          </div>
+
+                          {/* Actions */}
+                          <div className="flex items-center justify-end gap-2">
+                            <Button
+                              onClick={() => handleCallPatient(token)}
+                              size="icon"
+                              variant="ghost"
+                              className="h-9 w-9 rounded-full border border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50 dark:border-emerald-800 dark:hover:border-emerald-600 dark:hover:bg-emerald-950/40 transition-colors"
+                              title="Call patient"
+                              aria-label="Call patient"
+                            >
+                              <PhoneCall className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
+                            </Button>
+
+                            {!isUrgent && (
+                              <Button
+                                onClick={() => handleMarkUrgent(token)}
+                                size="icon"
+                                variant="ghost"
+                                className="h-9 w-9 rounded-full border border-border/70 hover:border-amber-500/70 hover:bg-amber-50/60 dark:hover:bg-amber-900/20"
+                                title="Mark as urgent"
+                                aria-label="Mark as urgent"
+                              >
+                                <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                              </Button>
+                            )}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
                 </div>
-              ))}
-            </div>
+              )}
+            </>
           ) : (
             <div className="text-center py-12">
-              <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gray-100 dark:bg-gray-800 mx-auto mb-3">
-                <Users className="h-8 w-8 text-gray-400" />
-              </div>
-              <p className="text-sm font-medium text-muted-foreground">No patients in queue</p>
-              <p className="text-xs text-muted-foreground mt-1">Queue is empty</p>
+              <Clock className="mx-auto h-12 w-12 text-muted-foreground mb-4" />
+              <p className="text-lg font-medium">Queue is empty</p>
+              <p className="text-muted-foreground">No patients waiting</p>
             </div>
           )}
         </CardContent>
       </Card>
+
+      {/* Show message when consultation is active */}
+      {activeConsultationTokenId && (
+        <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-900/40 dark:bg-blue-900/10">
+          <CardContent className="flex items-center justify-center gap-3 p-6">
+            <AlertCircle className="h-5 w-5 text-blue-600" />
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+              Waiting queue hidden during active consultation. Complete or cancel the consultation to view waiting patients.
+            </p>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

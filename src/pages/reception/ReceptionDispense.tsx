@@ -115,7 +115,7 @@ export default function ReceptionDispense() {
                     key={p.id}
                     onClick={() => handlePatientSelect(p.id)}
                     className={cn(
-                      'w-full rounded-lg border p-3 text-left transition-all hover:border-primary/50',
+                      'w-full rounded-lg border p-3 text-left transition-all hover:border-blue-400/50 dark:hover:border-blue-600/50 hover:shadow-sm',
                       selectedPatient === p.id && 'border-primary bg-primary/5'
                     )}
                   >

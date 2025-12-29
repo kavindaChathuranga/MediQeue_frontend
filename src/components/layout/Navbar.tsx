@@ -44,46 +44,53 @@ export function Navbar({ onMenuClick }: NavbarProps) {
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden"
+          className="md:hidden hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-all duration-200"
           onClick={onMenuClick}
         >
           <Menu className="h-5 w-5" />
         </Button>
 
-        <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
-            <span className="text-lg font-bold text-primary-foreground">M</span>
+        <div className="flex items-center gap-2 cursor-pointer group">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 shadow-md transition-all duration-200 group-hover:shadow-lg group-hover:scale-105">
+            <span className="text-lg font-bold text-white">M</span>
           </div>
-          <span className="hidden font-semibold md:inline-block">MediQueue</span>
+          <span className="hidden font-semibold md:inline-block transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">MediQueue</span>
         </div>
 
         <div className="flex-1 px-4">
           <div className="relative max-w-md">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground transition-colors peer-focus:text-blue-500" />
             <Input
               placeholder="Search patients, tokens..."
-              className="pl-9 bg-secondary border-0"
+              className="peer pl-9 bg-secondary/50 border-0 hover:bg-secondary transition-all duration-200 focus:bg-background focus:ring-2 focus:ring-blue-500/20"
             />
           </div>
         </div>
 
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <Badge className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="relative transition-all duration-200 hover:scale-105 active:scale-95 hover:bg-transparent focus-visible:ring-2 focus-visible:ring-blue-500/30"
+          >
+            <Bell className="h-5 w-5 text-muted-foreground transition-colors hover:text-blue-600" />
+            <Badge className="absolute right-0 top-0 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs border-2 border-background bg-blue-600 text-white shadow-md">
               3
             </Badge>
           </Button>
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="flex items-center gap-2 px-2">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary">
-                  <User className="h-4 w-4 text-primary-foreground" />
+              <Button
+                variant="ghost"
+                className="flex items-center gap-2 px-2 transition-all duration-200 rounded-lg hover:shadow-sm hover:bg-transparent focus-visible:ring-2 focus-visible:ring-blue-500/30"
+              >
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 via-blue-400 to-blue-600 shadow-md transition-transform duration-200 hover:scale-110">
+                  <User className="h-4 w-4 text-white" />
                 </div>
                 <div className="hidden text-left md:block">
-                  <p className="text-sm font-medium">{user?.name || 'User'}</p>
-                  <p className="text-xs text-muted-foreground">{getRoleLabel(user?.role || '')}</p>
+                  <p className="text-sm font-medium transition-colors text-foreground">{user?.name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground transition-colors">{getRoleLabel(user?.role || '')}</p>
                 </div>
               </Button>
             </DropdownMenuTrigger>

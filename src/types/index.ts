@@ -20,6 +20,7 @@ export interface QueueToken {
   patientId: string;
   patientName: string;
   status: TokenStatus;
+  consultationCompleted?: boolean;
   queueType: 'opd' | 'specialist';
   doctorId?: string;
   doctorName?: string;

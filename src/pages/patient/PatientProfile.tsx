@@ -79,7 +79,7 @@ export default function PatientProfile() {
           </Button>
         ) : (
           <div className="flex gap-2">
-            <Button onClick={handleSave} className="bg-medical-green hover:bg-medical-green/90">
+            <Button onClick={handleSave} className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800">
               <Save className="h-4 w-4 mr-2" />
               Save Changes
             </Button>

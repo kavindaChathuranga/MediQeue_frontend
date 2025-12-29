@@ -69,7 +69,11 @@ interface Medication {
   mealInstruction: 'before' | 'after' | 'with' | '';
 }
 
-export default function DoctorConsultation() {
+interface DoctorConsultationProps {
+  onComplete?: () => void;
+}
+
+export default function DoctorConsultation({ onComplete }: DoctorConsultationProps) {
   const [symptoms, setSymptoms] = useState('');
   const [diagnosis, setDiagnosis] = useState('');
   const [notes, setNotes] = useState('');
@@ -158,6 +162,8 @@ export default function DoctorConsultation() {
       title: 'Sent to Reception',
       description: 'Prescription has been sent to reception for billing and dispensing.',
     });
+
+    onComplete?.();
 
     // Clear form
     setSymptoms('');
@@ -404,7 +410,7 @@ export default function DoctorConsultation() {
                               variant="ghost"
                               size="sm"
                               onClick={() => removeMedication(med.id)}
-                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                              className="h-8 w-8 p-0 text-red-600 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -561,7 +567,7 @@ export default function DoctorConsultation() {
             <Button
               onClick={handleSendToReception}
               size="lg"
-              className="w-full md:w-auto bg-teal-600 hover:bg-teal-700 text-white px-8"
+              className="w-full md:w-auto bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 text-white px-8"
             >
               <Send className="h-5 w-5 mr-2" />
               Send to Reception
